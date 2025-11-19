@@ -1,0 +1,9 @@
+{
+	"name": "bulkjobscheduler",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "sakthivel.b+test+usdc@zohotest.com",
+	"dependencies": {
+		"zcatalyst-sdk-node": "latest"
+	}
+}

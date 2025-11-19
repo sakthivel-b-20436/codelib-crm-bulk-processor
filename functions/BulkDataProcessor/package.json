@@ -1,0 +1,16 @@
+{
+	"name": "bulkdataprocessor",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "sakthivel.b+test+usdc@zohotest.com",
+	"dependencies": {
+		"archiver": "^7.0.1",
+		"axios": "^1.13.2",
+		"csv-parse": "^6.1.0",
+		"csv-parser": "^3.2.0",
+		"fast-csv": "^5.0.5",
+		"form-data": "^4.0.4",
+		"unzipper": "^0.12.3",
+		"zcatalyst-sdk-node": "latest"
+	}
+}

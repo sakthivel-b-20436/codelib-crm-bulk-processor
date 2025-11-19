@@ -1,0 +1,11 @@
+{
+	"name": "zohocrm_bulk_callback",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "sakthivel.b+test+usdc@zohotest.com",
+	"dependencies": {
+		"express": "^5.1.0",
+		"validator": "^13.15.20",
+		"zcatalyst-sdk-node": "latest"
+	}
+}

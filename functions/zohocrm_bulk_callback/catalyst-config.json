@@ -1,0 +1,16 @@
+{
+	"deployment": {
+		"name": "zohocrm_bulk_callback",
+		"stack": "node20",
+		"type": "advancedio",
+		"env_variables": {
+			"CLIENT_SECRET": "*****", 
+			"CLIENT_ID": "*****",
+			"REFRESH_TOKEN": "******", 
+			"CODELIB_SECRET_KEY": "******"
+		}
+	},
+	"execution": {
+		"main": "index.js"
+	}
+}

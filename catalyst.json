@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "targets": [
+      "zohocrm_bulk_callback",
+      "bulkjobscheduler",
+      "bulkdataprocessor"
+    ],
+    "ignore": [".env", "*.env"],
+    "source": "functions"
+  }
+}
