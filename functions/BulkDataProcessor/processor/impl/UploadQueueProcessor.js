@@ -3,12 +3,17 @@ const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
 const archiver = require('archiver');
+const { parse } = require('csv-parse'); 
+const { pipeline } = require('stream/promises');
+
 
 const Tables = require('../../util/tables');
 const CommonUtil = require('../../util/commonUtil'); 
 
 class UploadQueueProcessor {
   async process(tableData, catalystApp) {
+    try{
+
       for (let i = 0; i < tableData.length; i++) {
       let rowData = tableData[i];
       if (rowData && rowData[Tables.WRITE_QUEUE.TABLE]) {
@@ -26,49 +31,30 @@ class UploadQueueProcessor {
       const objectStream = await bucket.getObject(fileId);
       const tmpCsvPath = path.join('/tmp', 'data.csv');
       const out = fs.createWriteStream(tmpCsvPath);
-      await new Promise((resolve, reject) => {
-        objectStream.pipe(out);
-        out.on('finish', () => {
-          resolve();
-        });
-        out.on('error', (err) => {
-          reject(err);
-        });
-      });
+      await pipeline(objectStream, out);
 
       const firstLine = await this._readFirstLineFromCsv(tmpCsvPath);
+
       const zipPath = path.join('/tmp', 'out.zip');
       await this._zipFile(tmpCsvPath, zipPath, 'data.csv');
      
       const accessToken = await CommonUtil.getCRMAccessToken(catalystApp);
 
       let zgid = '';
-      try {
         const orgResp = await axios.get(CommonUtil.CRM_ORG_GET_URL, {
           headers: { Authorization: accessToken }
         });
-
         if (!orgResp || !orgResp) {
         throw new Error("CRM Org returned empty response");
         }
+        zgid = orgResp.data.org[0].zgid;
 
-        if (orgResp && orgResp.data) {
-          const orgArray = orgResp.data.org || orgResp.data.data || orgResp.data;
-          if (Array.isArray(orgArray) && orgArray.length > 0) {
-            zgid = orgArray[0].zgid || orgArray[0].zgid || '';
-          } else if (orgResp.data.org && Array.isArray(orgResp.data.org) && orgResp.data.org[0]) {
-            zgid = orgResp.data.org[0].zgid;
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching org details:', err);
-        throw err;
-      }
+     
 
       const form = new FormData();
       form.append('file', fs.createReadStream(zipPath), { filename: path.basename(zipPath), contentType: 'application/zip' });
       let uploadResp;
-      try {
+     
         uploadResp = await axios.post(CommonUtil.CRM_UPLOAD_URL, form, {
           headers: {
             ...form.getHeaders(),
@@ -77,19 +63,12 @@ class UploadQueueProcessor {
             'X-CRM-ORG': zgid
           },
         });
-      } catch (err) {
-        console.error('Error uploading ZIP to CRM:', err);
-        throw err;
-      }
 
       if (!uploadResp || !uploadResp.data) {
         throw new Error('CRM upload returned empty response');
       }
-      const bulkUploadDetails = uploadResp.data;      
-      const crmFileId = (bulkUploadDetails.details && bulkUploadDetails.details.file_id) ||
-                        (bulkUploadDetails.details && bulkUploadDetails.details.id) ||
-                        bulkUploadDetails.file_id ||
-                        null;
+      const bulkUploadDetails = uploadResp.data;    
+      const crmFileId = bulkUploadDetails.details.file_id || null;
 
       const bulkWriteInput = {
         operation: 'upsert',
@@ -135,7 +114,7 @@ class UploadQueueProcessor {
       }
       bulkWriteInput.resource.push(resourceObj);
       let bulkWriteResp;
-      try {
+     
          bulkWriteResp = await axios.post(
             CommonUtil.CRM_BULK_WRITE_URL,
             bulkWriteInput,  
@@ -147,51 +126,46 @@ class UploadQueueProcessor {
             }
           );
 
-      } catch (err) {
-        console.error('Error calling CRM bulk write API:', err);
-        throw err;
-      }
-
       if (!bulkWriteResp || !bulkWriteResp.data) {
         throw new Error('CRM bulk write returned empty response');
       }
 
       const bulkWriteBody = bulkWriteResp.data;
-      const jobId = (bulkWriteBody.details && bulkWriteBody.details.id) || 
-                    (bulkWriteBody.data && bulkWriteBody.data[0] && bulkWriteBody.data[0].details && bulkWriteBody.data[0].details.id) ||
-                    null;
+      const jobId = bulkWriteBody.details.id || null;
 
       const zcql = catalystApp.zcql();
       const rowRowId = rowData['ROWID'] || rowData.ROWID || rowData.rowid;
       const updateQuery = `UPDATE ${Tables.WRITE_QUEUE.TABLE} SET ${Tables.WRITE_QUEUE.CRM_JOB_ID}='${jobId}', IS_UPLOADED=true WHERE ROWID='${rowRowId}'`;
       await zcql.executeZCQLQuery(updateQuery);
     }
+  } catch(err) {
+    console.log("Internal server error occurred. Please try again in some time.");
+    throw new error(err);
+  }
 
-  } 
+} 
 
   async _readFirstLineFromCsv(filePath) {
-    return new Promise((resolve, reject) => {
-      const rs = fs.createReadStream(filePath, { encoding: 'utf8' });
-      let acc = '';
-      let pos = 0;
-      let index;
-      rs.on('data', chunk => {
-        acc += chunk;
-        index = acc.indexOf('\n');
-        if (index !== -1) {
-          rs.close();
-          const firstLine = acc.slice(0, index).replace(/\r$/, '');
-          const parts = firstLine.split(',');
-          resolve(parts);
+    let inputFS;
+    try{
+    inputFS = fs.createReadStream(filePath);
+    const parser = inputFS.pipe(parse({
+        bom: true, 
+        skip_empty_lines: true,
+        columns: false, 
+    }));
+        for await (const record of parser) {
+            // Found the first record (header line)
+            return record; 
         }
-        pos += chunk.length;
-      });
-      rs.on('error', err => reject(err));
-      rs.on('end', () => {
-        const firstLine = acc.replace(/\r$/, '');
-        resolve(firstLine.length ? firstLine.split(',') : []);
-      });
-    });
+        // If the file is empty
+        return [];
+    } catch (e) {
+        console.error('Error parsing first line of CSV:', e.message);
+        throw e;
+    } finally {
+        inputFS.destroy(); 
+    }
   }
 
   async _zipFile(inputPath, outputZipPath, entryName = 'data.csv') {

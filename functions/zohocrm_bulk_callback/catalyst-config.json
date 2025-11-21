@@ -4,10 +4,10 @@
 		"stack": "node20",
 		"type": "advancedio",
 		"env_variables": {
-			"CLIENT_SECRET": "*****", 
-			"CLIENT_ID": "*****",
-			"REFRESH_TOKEN": "******", 
-			"CODELIB_SECRET_KEY": "******"
+			"CLIENT_SECRET": "5ea8cb6dc3933dd0a7570b44a34cffaafbd0ecec62", 
+			"CLIENT_ID": "1000.DJD8VTIKDLA7767NN0JO9MWRQX4C5H",
+			"REFRESH_TOKEN": "1000.cb2b6cd6d53633b794ca4884fe0245d5.a2a3be51e9c126263a6fb89279357533", 
+			"CODELIB_SECRET_KEY": "Sb40750291@"
 		}
 	},
 	"execution": {

@@ -1,39 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 const { pipeline } = require("stream/promises");
-const fastCsv = require('fast-csv');
-const { parse } = require('csv-parse/sync');
+// const fastCsv = require('fast-csv');
+// const { parse } = require('csv-parse/sync');
+const { parse } = require('csv-parse'); 
+
 const os = require('os');
 
 const Tables = require('../../util/tables');
 const CommonUtil = require('../../util/commonUtil');
-const RecordsProcessorImpl = require('../record/RecordsProcessorImpl');
+const RecordsProcessor = require('../impl/RecordsProcessor');
 
 const BATCH_SIZE = 5;
 const INPUT_FILE = path.join(os.tmpdir(), 'input.csv');
 const OUTPUT_FILE = path.join(os.tmpdir(), 'output.csv');
 
 class ReadQueueProcessor {
-  async closeWriter(csvWriteStream, outputFS) {
-    try {
-      if (csvWriteStream) {
-        csvWriteStream.end();
-      }
+
+  async closeWriter(outputFS) {
       if (outputFS && !outputFS.destroyed) {
         await new Promise((res) => outputFS.end(res));
       }
-      
-    } catch (e) {
-      console.log('Exception while closing CSVWriter:', e && e.message);
-      throw new Error(e);
-    }
-  }
+ }
 
   async createWriteQueueJob(filePath, bucket,zcql, module, objectPath) {
-    const fileBuffer = fs.readFileSync(filePath);
+    const fileStream = fs.createReadStream(filePath); 
     const uniquePath = objectPath;
-    await bucket.putObject(uniquePath, fileBuffer);
-   
+    await bucket.putObject(uniquePath, fileStream);
     const query = `INSERT INTO ${Tables.WRITE_QUEUE.TABLE} (${Tables.WRITE_QUEUE.FILE_ID}, ${Tables.WRITE_QUEUE.MODULE}) VALUES ('${uniquePath}', '${module}')`;
     await zcql.executeZCQLQuery(query);
     return uniquePath;
@@ -46,18 +39,20 @@ class ReadQueueProcessor {
     return uploadedPath;
   }
 
-  async processBatch(processor, csvWriteStream, headers, zcrmRecords) {
+  async processBatch(processor, outputFS, headers, zcrmRecords) {
     const updatedRecords = await processor.processRecords(zcrmRecords);
     for (const zcrmRecord of updatedRecords) {
+      console.log("ZCRM RECORDS::: ", zcrmRecord);
       const values = headers.map(h => {
-        const v = (zcrmRecord.data && (zcrmRecord.data[h] !== undefined && zcrmRecord.data[h] !== null)) ? zcrmRecord.data[h] : '';
+        const v = (zcrmRecord.data && (zcrmRecord.data[h] !== undefined && zcrmRecord.data[h] !== null)) ? zcrmRecord.data[h] : ''; //
         return String(v);
       });
-      csvWriteStream.write(values);
+     outputFS.write(values.join(',') + '\n');
     }
   }
 
   async process(tableData, catalystApp) {
+    try{
     const zcql = catalystApp.zcql();
     const stratus = catalystApp.stratus();
     const bucket = stratus.bucket(CommonUtil.CSVFILES);
@@ -71,64 +66,55 @@ class ReadQueueProcessor {
     const query = `Select * from ReadQueue where IS_PROCESS_COMPLETED=false and ROWID='${rowId}'`;
     const rows = await zcql.executeZCQLQuery(query);
 
-    const processor = new RecordsProcessorImpl();
+    const processor = new RecordsProcessor();
 
     for (const rowObj of rows) {
       const filepath = rowObj.ReadQueue.FILEID;
       const module = rowObj.ReadQueue.MODULE;
+
       let processedLine = Number(rowObj.ReadQueue.LINE_PROCESSED) || 0;
+
       const csvInputPath = INPUT_FILE;
       const csvOutputPath = OUTPUT_FILE;
+
       const objectPath = filepath;
+
       const objectStream = await bucket.getObject(objectPath);
       await pipeline(objectStream, fs.createWriteStream(csvInputPath));
-      const csvContent = fs.readFileSync(csvInputPath, "utf-8");
-      const records = parse(csvContent, {
-        bom: true,
-        skip_empty_lines: true,
-      });
+       const inputFS = fs.createReadStream(csvInputPath);
+          const parser = inputFS.pipe(parse({
+              bom: true,
+              skip_empty_lines: true,
+              columns: false, 
+       }));
 
       let totalRecords = 0;
       let bulkWriteChunkSize = 0;
       const zcrmRecords = [];
       let headers = null;
-      let csvWriteStream = null;
       let outputFS = null;
       let chunkIndex = 0; 
       
       const initializeChunkWriter = () => {
-        if (!outputFS || !csvWriteStream) {
+        if (!outputFS) {
           if (fs.existsSync(csvOutputPath)) {
-              try {
-                  fs.unlinkSync(csvOutputPath);
-              } catch (err) {
-                  console.log('Error while deleting existing output file:', err && err.message);
-              }
+            fs.unlinkSync(csvOutputPath);
           }
           outputFS = fs.createWriteStream(csvOutputPath, { flags: 'w' });
-          csvWriteStream = fastCsv.format({ headers: false });
-          csvWriteStream.pipe(outputFS);
-
-          if (headers) {
-              csvWriteStream.write(headers);
-          } 
+          outputFS.write(headers.join(',') + '\n');
         }
       };
 
-      let index = 0;
-      while (index < records.length) {
+       for await (const line of parser) {
         totalRecords++;
-        const line = records[index];
         const rec = { data: {}, moduleName: module };
 
         if (totalRecords === 1) {
           headers = line;
-          index++;
           continue;
         }
 
         if (totalRecords <= processedLine) {
-          index++;
           continue;
         }
 
@@ -139,41 +125,38 @@ class ReadQueueProcessor {
         for (let i = 0; i < line.length && totalRecords > 1; i++) {
           rec.data[headers[i]] = line[i] || '';
         }
+
         zcrmRecords.push(rec);
         bulkWriteChunkSize++;
 
         if (zcrmRecords.length === BATCH_SIZE) {
-          await this.processBatch(processor, csvWriteStream, headers, zcrmRecords);
+          await this.processBatch(processor, outputFS, headers, zcrmRecords);
           processedLine += zcrmRecords.length;
           zcrmRecords.length = 0;
         }
 
         if (bulkWriteChunkSize >= 10) {
-          await this.closeWriter(csvWriteStream, outputFS);
-          csvWriteStream = null;
+          await this.closeWriter(outputFS);
           outputFS = null;
           chunkIndex++;
           const chunkKey = `output/${rowId}_chunk_${chunkIndex}.csv`;
           await this.persistReadQueueDetails(csvOutputPath, bucket,zcql, rowId, processedLine, module, chunkKey);
           bulkWriteChunkSize = 0;
         }
-
-        index++;
       }
 
       if (zcrmRecords.length > 0) {
         if (bulkWriteChunkSize === 0) {
             initializeChunkWriter();
         }
-        await this.processBatch(processor, csvWriteStream, headers, zcrmRecords);
+        await this.processBatch(processor, outputFS, headers, zcrmRecords);
         processedLine += zcrmRecords.length;
         bulkWriteChunkSize += zcrmRecords.length; 
         zcrmRecords.length = 0;
       }
       
       if (bulkWriteChunkSize > 0) {
-        await this.closeWriter(csvWriteStream, outputFS);
-        csvWriteStream = null;
+        await this.closeWriter(outputFS);
         outputFS = null;
         chunkIndex++;
         const finalChunkKey = `output/${rowId}_chunk_${chunkIndex}.csv`;
@@ -181,10 +164,13 @@ class ReadQueueProcessor {
         bulkWriteChunkSize = 0;
       }
       await zcql.executeZCQLQuery(`update ReadQueue set IS_PROCESS_COMPLETED=true where ROWID='${rowId}'`);
-      await this.closeWriter(csvWriteStream, outputFS);
-      csvWriteStream = null;
+      await this.closeWriter(outputFS);
       outputFS = null;
     } 
-  } 
+  } catch(err){
+     console.log("Internal server error occurred. Please try again in some time.");
+     throw new error(err);
+}
 } 
+}
 module.exports = ReadQueueProcessor;

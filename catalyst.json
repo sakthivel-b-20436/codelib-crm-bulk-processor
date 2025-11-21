@@ -5,7 +5,10 @@
       "bulkjobscheduler",
       "bulkdataprocessor"
     ],
-    "ignore": [".env", "*.env"],
+    "ignore": [
+      ".env",
+      "*.env"
+    ],
     "source": "functions"
   }
 }

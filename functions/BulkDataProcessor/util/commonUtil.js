@@ -1,6 +1,5 @@
 const axios = require("axios");
-// const Tables = require("./tables"); 
-const FieldMeta = require("../src/models/FieldMeta");
+const FieldMeta = require("../models/FieldMeta");
 
 class CommonUtil {
 
@@ -10,7 +9,7 @@ class CommonUtil {
   static CRM_BULK_WRITE_URL = "https://zohoapis.com/crm/bulk/v8/write";
   static CRM_FIELD_API = "https://zohoapis.com/crm/v8/settings/fields";
   static BULK_READ = "BulkRead";
-  static CSVFILES = "csvfiles";
+  static CSVFILES = process.env.BUCKET_NAME;
 
 
   static async getCRMAccessToken(catalystApp) {
