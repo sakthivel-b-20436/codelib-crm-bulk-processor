@@ -1,8 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { pipeline } = require("stream/promises");
-// const fastCsv = require('fast-csv');
-// const { parse } = require('csv-parse/sync');
 const { parse } = require('csv-parse'); 
 
 const os = require('os');
