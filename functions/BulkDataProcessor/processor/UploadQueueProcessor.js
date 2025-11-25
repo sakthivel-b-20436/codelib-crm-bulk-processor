@@ -6,14 +6,11 @@ const archiver = require('archiver');
 const { parse } = require('csv-parse'); 
 const { pipeline } = require('stream/promises');
 
-
-const Tables = require('../../util/tables');
-const CommonUtil = require('../../util/commonUtil'); 
+const Tables = require('../util/tables');
+const CommonUtil = require('../util/commonUtil'); 
 
 class UploadQueueProcessor {
   async process(tableData, catalystApp) {
-    try{
-
       for (let i = 0; i < tableData.length; i++) {
       let rowData = tableData[i];
       if (rowData && rowData[Tables.WRITE_QUEUE.TABLE]) {
@@ -48,8 +45,6 @@ class UploadQueueProcessor {
         throw new Error("CRM Org returned empty response");
         }
         zgid = orgResp.data.org[0].zgid;
-
-     
 
       const form = new FormData();
       form.append('file', fs.createReadStream(zipPath), { filename: path.basename(zipPath), contentType: 'application/zip' });
@@ -138,11 +133,6 @@ class UploadQueueProcessor {
       const updateQuery = `UPDATE ${Tables.WRITE_QUEUE.TABLE} SET ${Tables.WRITE_QUEUE.CRM_JOB_ID}='${jobId}', IS_UPLOADED=true WHERE ROWID='${rowRowId}'`;
       await zcql.executeZCQLQuery(updateQuery);
     }
-  } catch(err) {
-    console.log("Internal server error occurred. Please try again in some time.");
-    throw new error(err);
-  }
-
 } 
 
   async _readFirstLineFromCsv(filePath) {
@@ -155,10 +145,8 @@ class UploadQueueProcessor {
         columns: false, 
     }));
         for await (const record of parser) {
-            // Found the first record (header line)
             return record; 
         }
-        // If the file is empty
         return [];
     } catch (e) {
         console.error('Error parsing first line of CSV:', e.message);
@@ -171,7 +159,7 @@ class UploadQueueProcessor {
   async _zipFile(inputPath, outputZipPath, entryName = 'data.csv') {
     return new Promise((resolve, reject) => {
       const output = fs.createWriteStream(outputZipPath);
-      const archive = archiver('zip', { zlib: { level: 9 } }); // 
+      const archive = archiver('zip', { zlib: { level: 9 } }); 
       output.on('close', () => resolve());
       archive.on('error', err => reject(err));
       archive.pipe(output);

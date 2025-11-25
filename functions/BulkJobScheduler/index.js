@@ -3,19 +3,19 @@ const catalyst = require("zcatalyst-sdk-node");
 module.exports = async (jobRequest, context) => {
   try {
     const app = catalyst.initialize(context);
-    const MODULE = jobRequest.getJobParam("MODULE");
-    const FIELDS_TO_BE_PROCESSED = jobRequest.getJobParam("FIELDS_TO_BE_PROCESSED");
-	if (!MODULE || MODULE.toString().trim() === "") {
+    const module = jobRequest.getJobParam("MODULE");
+    const fields_to_be_processed = jobRequest.getJobParam("FIELDS_TO_BE_PROCESSED");
+	if (!module) {
       throw new Error("MODULE cannot be empty");
     }
-    if (!FIELDS_TO_BE_PROCESSED || FIELDS_TO_BE_PROCESSED.toString().trim() === "") {
+    if (!fields_to_be_processed) {
       throw new Error("FIELDS_TO_BE_PROCESSED cannot be empty");
     }
 
     const table = app.datastore().table("BulkRead");
     await table.insertRow({
-      MODULE_NAME: MODULE,
-      FIELDS_TO_BE_PROCESSED: FIELDS_TO_BE_PROCESSED.replace(/\s/g, "") 
+      MODULE_NAME: module,
+      FIELDS_TO_BE_PROCESSED: fields_to_be_processed.replace(/\s/g, "") 
     });
     console.log("Inserted SucessFully");
   } catch (err) {

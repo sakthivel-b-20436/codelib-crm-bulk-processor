@@ -1,7 +1,7 @@
 const catalyst = require("zcatalyst-sdk-node");
-const DownloadQueueProcessor = require("./processor/impl/DownloadQueueProcessor");
-const ReadQueueProcessor = require("./processor/impl/ReadQueueProcessor");
-const UploadQueueProcessor = require("./processor/impl/UploadQueueProcessor");
+const DownloadQueueProcessor = require("./processor/DownloadQueueProcessor");
+const ReadQueueProcessor = require("./processor/ReadQueueProcessor");
+const UploadQueueProcessor = require("./processor/UploadQueueProcessor");
 const Tables = require("./util/tables"); 
 
 module.exports = async (event, context) => {

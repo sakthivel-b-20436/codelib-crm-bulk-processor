@@ -11,9 +11,7 @@ class CommonUtil {
   static BULK_READ = "BulkRead";
   static CSVFILES = process.env.BUCKET_NAME;
 
-
   static async getCRMAccessToken(catalystApp) {
-    try {     
       const authJson = {
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
@@ -29,10 +27,6 @@ class CommonUtil {
       const token = await crmConnector.getAccessToken();
       const accessToken = `Zoho-oauthtoken ${token}`;
       return accessToken; 
-    } catch (err) {
-      console.error("Error fetching access token:", err);
-      throw err;
-    }
   }
  
   static getCallBackURL(catalystApp) {
@@ -43,8 +37,7 @@ class CommonUtil {
   }
 
   static async getFields(module, catalystApp) {
-    const meta = new FieldMeta();
-    try {
+      const meta = new FieldMeta();
       const accessToken = await this.getCRMAccessToken(catalystApp);
       const url = `${this.CRM_FIELD_API}?module=${module}&type=all`;
       const response = await axios.get(url, {
@@ -75,10 +68,6 @@ class CommonUtil {
           }
       }
       return meta;
-    } catch (error) {
-      console.error("Error occurred in Get fields:", error.message);
-      throw error;
-    }
   }
 }
 module.exports = CommonUtil;
