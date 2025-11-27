@@ -1,0 +1,67 @@
+name: Zoho CRM Bulk Data Processor Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    environment: Production
+    name: 'Creating Zoho CRM Bulk Data Processor Release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v2
+
+      - name: Installing Node 18
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Installing Catalyst CLI
+        run: npm i -g zcatalyst-cli@1.17.3
+
+      - name: Installing dependencies for BulkDataProcessor
+        working-directory: ./functions/BulkDataProcessor
+        run: npm install --omit=dev
+
+      - name: Installing dependencies for BulkJobScheduler
+        working-directory: ./functions/BulkJobScheduler
+        run: npm install --omit=dev
+
+      - name: Installing dependencies for zohocrm_bulk_callback
+        working-directory: ./functions/zohocrm_bulk_callback
+        run: npm install --omit=dev
+
+      - name: Deploying to Catalyst
+        run: catalyst deploy --project ${{ secrets.CATALYST_PROJECT_NAME }} --org ${{ secrets.CATALYST_ORG }} --token ${{ secrets.CATALYST_TOKEN }}
+
+      - name: Creating release directory
+        run: mkdir -p release/functions
+
+      - name: Zipping BulkDataProcessor
+        working-directory: ./functions/BulkDataProcessor/.output
+        run: zip -r ../../../release/functions/BulkDataProcessor.zip .
+
+      - name: Zipping BulkJobScheduler
+        working-directory: ./functions/BulkJobScheduler/.output
+        run: zip -r ../../../release/functions/BulkJobScheduler.zip .
+
+      - name: Zipping zohocrm_bulk_callback
+        working-directory: ./functions/zohocrm_bulk_callback
+        run: zip -r ../../release/functions/zohocrm_bulk_callback.zip .
+
+      - name: Copying project template
+        run: cp project-template-1.0.0.json release/project-template-1.0.0.json
+
+      - name: Generating release zip
+        run: cd release && zip -r release.zip .
+
+      - name: Generating artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          tag: ${{ env.RELEASE_VERSION }}
+          artifacts: "./release/release.zip"

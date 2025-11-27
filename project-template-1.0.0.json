@@ -1,0 +1,588 @@
+{
+  "name": "project-template",
+  "version": "1.0.0",
+  "parameters": {},
+  "components": {
+    "Functions": [
+      {
+      "type" : "function",
+      "name" : "zohocrm_bulk_callback",
+      "properties" : {
+        "stack" : "node20",
+        "code" : {
+          "path" : "functions/zohocrm_bulk_callback.zip"
+        },
+        "configuration" : {
+           "environment": {
+              "variables": { "CODELIB_SECRET_KEY": "CODELIB_FAKE_KEY" }
+            },
+          "memory" : 256
+        },
+        "type" : "applogic",
+        "name" : "zohocrm_bulk_callback"
+      },
+      "dependsOn" : [ ]
+    },
+      {
+      "type" : "function",
+      "name" : "bulkdataprocessor",
+      "properties" : {
+        "stack" : "node20",
+        "code" : {
+          "path" : "functions/bulkdataprocessor.zip"
+        },
+        "configuration" : {
+           "environment": {
+              "variables": { "CODELIB_SECRET_KEY": "CODELIB_FAKE_KEY" }
+            },
+          "memory" : 256
+        },
+        "type" : "event",
+        "name" : "bulkdataprocessor"
+      },
+      "dependsOn" : [ ]
+    },
+      {
+      "type" : "function",
+      "name" : "bulkjobscheduler",
+      "properties" : {
+        "stack" : "node20",
+        "code" : {
+          "path" : "functions/bulkjobscheduler.zip"
+        },
+        "configuration" : {
+          "environment" : {
+            "variables" : { }
+          },
+          "memory" : 256
+        },
+        "type" : "job",
+        "name" : "bulkjobscheduler"
+      },
+      "dependsOn" : [ ]
+    }
+    ],
+    "Datastore": [
+      {
+        "type": "table",
+        "name": "ReadQueue",
+        "properties": {
+          "table_name": "ReadQueue"
+        },
+        "dependsOn": []
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-FILEID",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "FILEID",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-LINE_PROCESSED",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "LINE_PROCESSED",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "0",
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "data_type": "bigint",
+          "search_index_enabled": false,
+          "max_length": 19
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-IS_PROCESS_STARTED",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "IS_PROCESS_STARTED",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "false",
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "data_type": "boolean",
+          "search_index_enabled": false,
+          "max_length": 50
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-CRM_JOB_ID",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "CRM_JOB_ID",
+          "data_type": "text",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "max_length": 10000
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-IS_PROCESS_COMPLETED",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "IS_PROCESS_COMPLETED",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "false",
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "data_type": "boolean",
+          "search_index_enabled": false,
+          "max_length": 50
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "column",
+        "name": "ReadQueue-MODULE",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "MODULE",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "ReadQueue",
+          "table_name": "ReadQueue",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type" : "column",
+        "name" : "BulkRead-FIELDS_TO_BE_PROCESSED",
+        "properties" : {
+          "audit_consent" : false,
+          "decimal_digits" : 2,
+          "column_name" : "FIELDS_TO_BE_PROCESSED",
+          "data_type" : "text",
+          "is_unique" : false,
+          "is_mandatory" : false,
+          "search_index_enabled" : false,
+          "table_id" : "BulkRead",
+          "table_name" : "BulkRead",
+          "max_length" : 10000
+        },
+        "dependsOn" : [ "Datastore.table.BulkRead" ]
+      },
+      {
+        "type": "tableScope",
+        "name": "ReadQueue-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "table_scope": "GLOBAL",
+          "type": "App Administrator",
+          "table_name": "ReadQueue"
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "tableScope",
+        "name": "ReadQueue-App User",
+        "properties": {
+          "role_name": "App User",
+          "table_scope": "GLOBAL",
+          "type": "App User",
+          "table_name": "ReadQueue"
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "ReadQueue-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "type": "App Administrator",
+          "table_permissions": ["SELECT", "UPDATE", "INSERT", "DELETE"],
+          "table_name": "ReadQueue"
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "ReadQueue-App User",
+        "properties": {
+          "role_name": "App User",
+          "type": "App User",
+          "table_permissions": ["SELECT"],
+          "table_name": "ReadQueue"
+        },
+        "dependsOn": ["Datastore.table.ReadQueue"]
+      },
+      {
+        "type": "table",
+        "name": "WriteQueue",
+        "properties": {
+          "table_name": "WriteQueue"
+        },
+        "dependsOn": []
+      },
+      {
+        "type": "column",
+        "name": "WriteQueue-FILE_ID",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "FILE_ID",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "WriteQueue",
+          "table_name": "WriteQueue",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "column",
+        "name": "WriteQueue-IS_UPLOADED",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "IS_UPLOADED",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "false",
+          "table_id": "WriteQueue",
+          "table_name": "WriteQueue",
+          "data_type": "boolean",
+          "search_index_enabled": false,
+          "max_length": 50
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "column",
+        "name": "WriteQueue-CRM_JOB_ID",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "CRM_JOB_ID",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "WriteQueue",
+          "table_name": "WriteQueue",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "column",
+        "name": "WriteQueue-MODULE",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "MODULE",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "WriteQueue",
+          "table_name": "WriteQueue",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "tableScope",
+        "name": "WriteQueue-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "table_scope": "GLOBAL",
+          "type": "App Administrator",
+          "table_name": "WriteQueue"
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "tableScope",
+        "name": "WriteQueue-App User",
+        "properties": {
+          "role_name": "App User",
+          "table_scope": "GLOBAL",
+          "type": "App User",
+          "table_name": "WriteQueue"
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "WriteQueue-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "type": "App Administrator",
+          "table_permissions": ["SELECT", "UPDATE", "INSERT", "DELETE"],
+          "table_name": "WriteQueue"
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "WriteQueue-App User",
+        "properties": {
+          "role_name": "App User",
+          "type": "App User",
+          "table_permissions": ["SELECT"],
+          "table_name": "WriteQueue"
+        },
+        "dependsOn": ["Datastore.table.WriteQueue"]
+      },
+      {
+        "type": "table",
+        "name": "BulkRead",
+        "properties": {
+          "table_name": "BulkRead"
+        },
+        "dependsOn": []
+      },
+      {
+        "type": "column",
+        "name": "BulkRead-CRMJOBID",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "CRMJOBID",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "BulkRead",
+          "table_name": "BulkRead",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "column",
+        "name": "BulkRead-REQUESTED_PAGE_NO",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "REQUESTED_PAGE_NO",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "1",
+          "table_id": "BulkRead",
+          "table_name": "BulkRead",
+          "data_type": "int",
+          "search_index_enabled": false,
+          "max_length": 10
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "column",
+        "name": "BulkRead-FETCHED_PAGE_NO",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "FETCHED_PAGE_NO",
+          "is_unique": false,
+          "is_mandatory": false,
+          "default_value": "0",
+          "table_id": "BulkRead",
+          "table_name": "BulkRead",
+          "data_type": "int",
+          "search_index_enabled": false,
+          "max_length": 10
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "column",
+        "name": "BulkRead-MODULE_NAME",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "MODULE_NAME",
+          "data_type": "varchar",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "BulkRead",
+          "table_name": "BulkRead",
+          "max_length": 255
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "column",
+        "name": "BulkRead-DOWNLOAD_URL",
+        "properties": {
+          "audit_consent": false,
+          "decimal_digits": 2,
+          "column_name": "DOWNLOAD_URL",
+          "data_type": "text",
+          "is_unique": false,
+          "is_mandatory": false,
+          "search_index_enabled": false,
+          "table_id": "BulkRead",
+          "table_name": "BulkRead",
+          "max_length": 10000
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "tableScope",
+        "name": "BulkRead-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "table_scope": "GLOBAL",
+          "type": "App Administrator",
+          "table_name": "BulkRead"
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "tableScope",
+        "name": "BulkRead-App User",
+        "properties": {
+          "role_name": "App User",
+          "table_scope": "GLOBAL",
+          "type": "App User",
+          "table_name": "BulkRead"
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "BulkRead-App Administrator",
+        "properties": {
+          "role_name": "App Administrator",
+          "type": "App Administrator",
+          "table_permissions": ["SELECT", "UPDATE", "INSERT", "DELETE"],
+          "table_name": "BulkRead"
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      },
+      {
+        "type": "tablePermission",
+        "name": "BulkRead-App User",
+        "properties": {
+          "role_name": "App User",
+          "type": "App User",
+          "table_permissions": ["SELECT"],
+          "table_name": "BulkRead"
+        },
+        "dependsOn": ["Datastore.table.BulkRead"]
+      }
+    ],
+    "EventListeners": [
+      {
+        "type": "rules",
+        "name": "ZohoCRMDataProcessor",
+        "properties": {
+          "listener_name": "Default",
+          "rule_name": "ZohoCRMDataProcessor",
+          "description": "",
+          "source_type": "Datastore",
+          "source": [
+            {
+              "entity_identifier": "BulkRead"
+            },
+            {
+              "entity_identifier": "WriteQueue"
+            },
+            {
+              "entity_identifier": "ReadQueue"
+            }
+          ],
+          "target": [
+            {
+              "entity_identifier": "bulkdataprocessor",
+              "target_type": "Function"
+            }
+          ],
+          "action": ["Insert", "Update"],
+          "status": true
+        },
+        "dependsOn": ["Functions.function.bulkdataprocessor"]
+      }
+    ],
+    "SchedulingJobpool" : [ {
+      "type" : "SchedulingJobpool",
+      "name" : "crmbulkprocessorpool",
+      "properties" : {
+        "name" : "crmbulkprocessorpool",
+        "type" : "Function",
+        "capacity" : {
+          "memory" : 512
+        }
+      },
+      "dependsOn" : [ ]
+    } ],
+    "SchedulingCron" : [ {
+      "type" : "SchedulingCron",
+      "name" : "crmbulkprocessorcron",
+      "properties" : {
+        "cron_execution_type" : "pre-defined",
+        "end_time" : -1,
+        "cron_detail" : {
+          "hour" : 0,
+          "timezone" : "America/Los_Angeles",
+          "time_of_execution" : 1764316860,
+          "minute" : 0,
+          "second" : 0
+        },
+        "cron_name" : "crmbulkprocessorcron",
+        "cron_status" : true,
+        "cron_type" : "OneTime",
+        "job_meta" : {
+          "headers" : { },
+          "jobpool_details" : {
+            "name" : "crmbulkprocessorpool",
+            "type" : "Function",
+            "capacity" : {
+              "memory" : 512
+            }
+          },
+          "job_config" : {
+            "number_of_retries" : 0
+          },
+          "job_name" : "crmbulkprocessorjob",
+          "source_details" : {
+            "source_name" : "crmbulkprocessorcron"
+          },
+          "target_type" : "Function",
+          "source_type" : "Cron",
+          "target_details" : {
+            "target_name" : "bulkjobscheduler"
+          },
+          "url" : ""
+        }
+      },
+      "dependsOn" : []
+    } ]
+  }
+}
