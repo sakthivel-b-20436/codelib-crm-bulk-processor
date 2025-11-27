@@ -556,7 +556,7 @@
           "second" : 0
         },
         "cron_name" : "crmbulkprocessorcron",
-        "cron_status" : true,
+        "cron_status" : false,
         "cron_type" : "OneTime",
         "job_meta" : {
           "headers" : { },
@@ -578,6 +578,10 @@
           "source_type" : "Cron",
           "target_details" : {
             "target_name" : "bulkjobscheduler"
+          },
+          "params" : {
+            "MODULE" : "",
+            "FIELDS_TO_BE_PROCESSED" : ""
           },
           "url" : ""
         }
