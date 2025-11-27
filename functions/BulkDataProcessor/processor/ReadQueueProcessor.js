@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const { pipeline } = require("stream/promises");
-const { parse } = require('csv-parse'); 
+const { parse } = require('csv-parse/.'); 
 const os = require('os');
 
 const Tables = require('../util/tables');
 const CommonUtil = require('../util/commonUtil');
-const RecordsProcessor = require('../processor/RecordsProcessor');
+const RecordsProcessor = require('./RecordsProcessor');
 
 const BATCH_SIZE = 500;
 const INPUT_FILE = path.join(os.tmpdir(), 'input.csv');

@@ -15,39 +15,36 @@ jobs:
       - name: Cloning repository
         uses: actions/checkout@v2
 
-      - name: Installing Node 18
+      - name: Installing Node 20
         uses: actions/setup-node@v2
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Installing Catalyst CLI
-        run: npm i -g zcatalyst-cli@1.17.3
+        run: npm i -g zcatalyst-cli@1.21.0
 
-      - name: Installing dependencies for BulkDataProcessor
-        working-directory: ./functions/BulkDataProcessor
+      - name: Installing dependencies for bulkdataprocessor
+        working-directory: ./functions/bulkdataprocessor
         run: npm install --omit=dev
 
-      - name: Installing dependencies for BulkJobScheduler
-        working-directory: ./functions/BulkJobScheduler
+      - name: Installing dependencies for bulkjobscheduler
+        working-directory: ./functions/bulkjobscheduler
         run: npm install --omit=dev
 
       - name: Installing dependencies for zohocrm_bulk_callback
         working-directory: ./functions/zohocrm_bulk_callback
         run: npm install --omit=dev
 
-      - name: Deploying to Catalyst
-        run: catalyst deploy --project ${{ secrets.CATALYST_PROJECT_NAME }} --org ${{ secrets.CATALYST_ORG }} --token ${{ secrets.CATALYST_TOKEN }}
-
       - name: Creating release directory
         run: mkdir -p release/functions
 
-      - name: Zipping BulkDataProcessor
-        working-directory: ./functions/BulkDataProcessor/.output
-        run: zip -r ../../../release/functions/BulkDataProcessor.zip .
+      - name: Zipping bulkdataprocessor
+        working-directory: ./functions/bulkdataprocessor
+        run: zip -r ../../../release/functions/bulkdataprocessor.zip .
 
-      - name: Zipping BulkJobScheduler
-        working-directory: ./functions/BulkJobScheduler/.output
-        run: zip -r ../../../release/functions/BulkJobScheduler.zip .
+      - name: Zipping bulkjobscheduler
+        working-directory: ./functions/bulkjobscheduler
+        run: zip -r ../../../release/functions/bulkjobscheduler.zip .
 
       - name: Zipping zohocrm_bulk_callback
         working-directory: ./functions/zohocrm_bulk_callback

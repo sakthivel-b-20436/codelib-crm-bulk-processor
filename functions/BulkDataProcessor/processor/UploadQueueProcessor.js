@@ -3,7 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
 const archiver = require('archiver');
-const { parse } = require('csv-parse'); 
+const { parse } = require('csv-parse/.'); 
 const { pipeline } = require('stream/promises');
 
 const Tables = require('../util/tables');
