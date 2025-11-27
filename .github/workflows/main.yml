@@ -40,11 +40,11 @@ jobs:
 
       - name: Zipping bulkdataprocessor
         working-directory: ./functions/bulkdataprocessor
-        run: zip -r ../../../release/functions/bulkdataprocessor.zip .
+        run: zip -r ../../release/functions/bulkdataprocessor.zip .
 
       - name: Zipping bulkjobscheduler
         working-directory: ./functions/bulkjobscheduler
-        run: zip -r ../../../release/functions/bulkjobscheduler.zip .
+        run: zip -r ../../release/functions/bulkjobscheduler.zip .
 
       - name: Zipping zohocrm_bulk_callback
         working-directory: ./functions/zohocrm_bulk_callback
